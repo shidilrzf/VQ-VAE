@@ -8,8 +8,6 @@ from torch.autograd import Variable
 import matplotlib.pyplot as plt
 
 
-
-
 def generate_images(generator, centers, num_clusters, alpha, z_dim, device):
     idx_centers = torch.from_numpy(np.random.choice(np.arange(num_clusters), 16))
     eps = torch.FloatTensor(16, z_dim).uniform_(-alpha, alpha).to(device)
@@ -21,6 +19,7 @@ def generate_images(generator, centers, num_clusters, alpha, z_dim, device):
     grid_img = tvu.make_grid(images, nrow=rows)
     return grid_img
 
+
 def reconstrct_images(model, dataloader, device):
     model.eval()
 
@@ -29,13 +28,12 @@ def reconstrct_images(model, dataloader, device):
     x_pre_vq = model._pre_vq_conv(model._encoder(x))
     _, x_quantize, _, _ = model._vq_vae(x_pre_vq)
     x_hat = model._decoder(x_quantize).cpu().detach()
-    
+
     #grid_img = tvu.make_grid(x_hat, nrow=rows)
     x = x[:10].cpu().view(10 * 32, 32)
     x_hat = x_hat[:10].cpu().view(10 * 32, 32)
     comparison = torch.cat((x, x_hat), 1).view(10 * 32, 2 * 32)
     return comparison
-
 
 
 def type_tdouble(use_cuda=False):
@@ -73,10 +71,8 @@ def conv_size(H_in, k_size, stride, padd, dil=1):
     return np.int(H_out)
 
 
-
 def shuffle(X):
     np.take(X, np.random.permutation(X.shape[0]), axis=0, out=X)
-
 
 
 def numpy2torch(x):
@@ -88,8 +84,9 @@ def extract_batch(data, it, batch_size):
     #x.sub_(0.5).div_(0.5)
     return Variable(x)
 
+
 def plot_scatter_outliers(mse_score_inlier, discriminator_score_inlier, mse_score_outlier, discriminator_score_outlier, epoch):
-    
+
     plt.scatter(mse_score_inlier, discriminator_score_inlier)
     plt.scatter(mse_score_outlier, discriminator_score_outlier)
     plt.xlabel('MSE_distance')
@@ -99,17 +96,16 @@ def plot_scatter_outliers(mse_score_inlier, discriminator_score_inlier, mse_scor
     plt.savefig('results/inlier_vs_outlier_{}.png'.format(epoch))
     plt.close()
 
+
 def save_checkpoint(state, filename):
     torch.save(state, filename)
+
 
 def save_img(img, filename):
     npimg = img.numpy()
 
-    fig = plt.imshow(np.transpose(npimg, (1,2,0)), interpolation='nearest')
+    fig = plt.imshow(np.transpose(npimg, (1, 2, 0)), interpolation='nearest')
     fig.axes.get_xaxis().set_visible(False)
     fig.axes.get_yaxis().set_visible(False)
     plt.savefig(filename)
     plt.close()
-
-
-

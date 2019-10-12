@@ -101,9 +101,8 @@ download_data = True
 transform = transforms.Compose([transforms.Resize([32, 32]), transforms.ToTensor()])
 inlier_classes = [0]
 batch_size = args.batch_size
-train_dataloader = get_dataloadr(inlier_classes, True , transform, args.batch_size, use_cuda)
-val_dataloader = get_dataloadr(inlier_classes, False , transform, args.batch_size, use_cuda)
-
+train_dataloader = get_dataloadr(inlier_classes, True, transform, args.batch_size, use_cuda)
+val_dataloader = get_dataloadr(inlier_classes, False, transform, args.batch_size, use_cuda)
 
 
 # Set tensorboard
@@ -115,10 +114,8 @@ logger = SummaryWriter(comment='_' + args.uid + '_' + args.dataset_name)
 
 # Define model
 model = VQ_VAE(num_hiddens, num_residual_layers, num_residual_hiddens,
-              args.clusters, z_dim,
-              commitment_cost, device, decay).to(device)
-
-
+               args.clusters, z_dim,
+               commitment_cost, device, decay).to(device)
 
 
 # optimizer
@@ -126,44 +123,40 @@ optimizer = optim.Adam(model.parameters(), lr=args.lr, amsgrad=False)
 scheduler = ReduceLROnPlateau(optimizer, 'min', verbose=True)
 
 
-
 def train_validate(model, loader, optimizer, train, device):
     model.train() if train else model.eval()
-    
+
     total_loss = 0
     total_recon_loss = 0
     total_vq_loss = 0
     total_perplexity = 0
 
-    
     for batch_idx, (x, y) in enumerate(loader):
         loss = 0
         x = x.to(device)
         if train:
             optimizer.zero_grad()
-        
+
         vq_loss, x_recon, perplexity = model(x)
 
         recon_loss = torch.mean((x_recon - x)**2)
         loss = recon_loss + vq_loss
-        
-        
+
         total_loss += loss.item()
         total_recon_loss += recon_loss.item()
         total_vq_loss += vq_loss.item()
         total_perplexity += perplexity.item()
-        
-        
+
         if train:
             loss.backward()
             optimizer.step()
-    return total_loss/ len(loader.dataset), total_recon_loss / len(loader.dataset), total_vq_loss / len(loader.dataset), total_perplexity / len(loader.dataset)
+    return total_loss / len(loader.dataset), total_recon_loss / len(loader.dataset), total_vq_loss / len(loader.dataset), total_perplexity / len(loader.dataset)
 
 
 def execute_graph(model, train_dataloader, val_dataloader, optimizer, scheduler, device):
     # Training loss
     t_loss, t_recon_loss, t_vq_loss, t_prxl = train_validate(model, train_dataloader, optimizer, True, device)
-    
+
     # Validation loss
     v_loss, v_recon_loss, v_vq_loss, v_prxl = train_validate(model, val_dataloader, optimizer, False, device)
     print('====> Epoch: {}..................'.format(epoch))
@@ -171,18 +164,18 @@ def execute_graph(model, train_dataloader, val_dataloader, optimizer, scheduler,
     print('====> Train: Average Recon loss: {:.4f}'.format(t_recon_loss))
     print('====> Train: Average VQ loss: {:.4f}'.format(t_vq_loss))
     print('====> Train: Average Perpexility: {:.4f}'.format(t_prxl))
-    
+
     print('====> Valid: Average Valid loss: {:.4f}'.format(v_loss))
     print('====> Valid: Average Recon loss: {:.4f}'.format(v_recon_loss))
     print('====> Valid: Average VQ loss: {:.4f}'.format(v_vq_loss))
     print('====> Valid: Average Perpexility: {:.4f}'.format(v_prxl))
-    
+
     print('================================================================>')
-    
+
     # Training and validation loss
     logger.add_scalar(log_dir + '/validation-loss', v_loss, epoch)
     logger.add_scalar(log_dir + '/training-loss', t_loss, epoch)
-    
+
 #    # image generation examples
 #    sample = generation_example(model, args.z_dim, data_loader.train_loader, input_shape, num_class, use_cuda)
 #    sample = sample.detach()
@@ -197,7 +190,7 @@ def execute_graph(model, train_dataloader, val_dataloader, optimizer, scheduler,
     logger.add_image('reconstruction example', comparison, epoch)
 
     scheduler.step(v_loss)
-    
+
     return v_loss
 
 
@@ -219,9 +212,3 @@ for epoch in range(1, num_epochs + 1):
                         'val_loss': v_loss
                         },
                         'models/' + args.uid + '_' + args.dataset_name + '.pt')
-
-
-
-
-
-
