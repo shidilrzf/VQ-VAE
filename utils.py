@@ -96,6 +96,31 @@ def plot_scatter_outliers(mse_score_inlier, discriminator_score_inlier, mse_scor
     plt.savefig('results/inlier_vs_outlier_{}.png'.format(epoch))
     plt.close()
 
+def get_mse_score(model, x, device):
+    N = x.size(0)
+    x = x.to(device)
+    _, x_hat, _ = model(x)
+    x = x.squeeze().cpu().detach().numpy()
+    x_hat = x_hat.squeeze().cpu().detach().numpy()
+    
+    mse_score= []
+    for i in range(N):
+        distance = np.sum(np.power(x_hat[i].flatten() - x[i].flatten(), 2.0))
+        mse_score.append(distance)
+    
+    return mse_score
+
+def plot_mse_outliers(mse_score_inlier, mse_score_outlier, filename):
+    
+    plt.hist(mse_score_inlier, 10, density=1, facecolor='g', alpha=0.75)
+    plt.hist(mse_score_outlier, 10, density=1, facecolor='r', alpha=0.75)
+    plt.xlabel('MSE_distance')
+    plt.ylabel('Histogram')
+    #plt.legend()
+    plt.grid(True)
+    plt.savefig(filename)
+    plt.close()
+
 
 def save_checkpoint(state, filename):
     torch.save(state, filename)

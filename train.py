@@ -103,6 +103,7 @@ inlier_classes = [0]
 batch_size = args.batch_size
 train_dataloader = get_dataloadr(inlier_classes, True, transform, args.batch_size, use_cuda)
 val_dataloader = get_dataloadr(inlier_classes, False, transform, args.batch_size, use_cuda)
+val_dataloader_outlier = get_dataloadr(outlier_classes, False , transform, args.batch_size, use_cuda)
 
 
 # Set tensorboard
@@ -188,6 +189,18 @@ def execute_graph(model, train_dataloader, val_dataloader, optimizer, scheduler,
     comparison = tvu.make_grid(comparison, normalize=False, scale_each=True)
     save_img(comparison, 'results/reconstruction example_{}.png'.format(epoch))
     logger.add_image('reconstruction example', comparison, epoch)
+    
+    if epoch % 2 == 0:
+        directory = 'results'
+        if not os.path.exists(directory):
+            os.makedirs(directory)
+        (x_inlier, _) = next(iter(val_dataloader))
+        (x_outlier, _) = next(iter(val_dataloader_outlier))
+        
+        mse_score_inlier = get_mse_score(model, x_inlier, device)
+        mse_score_outlier = get_mse_score(model, x_outlier, device)
+        filename = 'results/outlier_vs_inlier_{}'.format(epoch)
+        plot_mse_outliers(mse_score_inlier, mse_score_outlier, filename)
 
     scheduler.step(v_loss)
 

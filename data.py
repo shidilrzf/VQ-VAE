@@ -27,7 +27,7 @@ def get_dataloadr(inlier_classes, is_train, transform, batch_size, use_cuda):
     dataset.data = data
     dataset.target = label
 
-    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=is_train, **kwargs)
+    dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=True, **kwargs)
     return dataloader
 
 
